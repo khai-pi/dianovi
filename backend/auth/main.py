@@ -22,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SECRET = "supersecretkey"
+SECRET = os.getenv("JWT_SECRET", "supersecretkey")
 PATIENT_SERVICE_URL = os.getenv("PATIENT_SERVICE_URL", "http://patient:8000")
 RECOMMENDATION_SERVICE_URL = os.getenv("RECOMMENDATION_SERVICE_URL", "http://recommendation:8000")
 

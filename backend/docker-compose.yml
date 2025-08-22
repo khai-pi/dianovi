@@ -18,6 +18,7 @@ services:
     ports:
       - "8001:8000"
     environment:
+      - JWT_SECRET=devsecret
       - PATIENT_SERVICE_URL=http://patient:8000
       - RECOMMENDATION_SERVICE_URL=http://recommendation:8000
     depends_on:
