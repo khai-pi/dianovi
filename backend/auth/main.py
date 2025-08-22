@@ -4,8 +4,23 @@ from pydantic import BaseModel
 import jwt
 import httpx
 import os
+from fastapi.middleware.cors import CORSMiddleware
+
+# Auth works also as API Gateway
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:3000",  # React dev server origin
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,   # Or ["*"] to allow all, but be careful with that in prod
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 SECRET = "supersecretkey"
 PATIENT_SERVICE_URL = os.getenv("PATIENT_SERVICE_URL", "http://patient:8000")
@@ -17,7 +32,7 @@ class LoginRequest(BaseModel):
     password: str
 
 
-@app.post("/login")
+@app.post("/api/login")
 def login(req: LoginRequest):
     if req.username == "doctor" and req.password == "password":
         token = jwt.encode({"sub": req.username}, SECRET, algorithm="HS256")
@@ -26,7 +41,7 @@ def login(req: LoginRequest):
 
 
 # Forward requests to the patient service
-@app.api_route("/patients{full_path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@app.api_route("/api/patients{full_path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def proxy_patients(request: Request, full_path: str):
     return await forward_request(
         request=request,
@@ -37,7 +52,7 @@ async def proxy_patients(request: Request, full_path: str):
 
 
 # Forward requests to the recommendation service
-@app.api_route("/recommend{full_path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@app.api_route("/api/recommend{full_path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def proxy_recommend(request: Request, full_path: str):
     return await forward_request(
         request=request,
