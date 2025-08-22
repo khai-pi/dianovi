@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:15
+    container_name: db
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: medical
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    # ports:
+    #   - "5432:5432"
+
+  # Auth / API Gateway
+  auth:
+    build: ./auth
+    ports:
+      - "8001:8000"
+    environment:
+      - PATIENT_SERVICE_URL=http://patient:8000
+      - RECOMMENDATION_SERVICE_URL=http://recommendation:8000
+    depends_on:
+      - patient
+      - recommendation
+
+  patient:
+    build: ./patient
+    ports:
+      - "8002:8000"
+    depends_on:
+      - db
+
+  recommendation:
+    build: ./recommendation
+    ports:
+      - "8003:8000"
+
+  his_adapter:
+    build: ./his_adapter
+    depends_on:
+      - db
+      - patient

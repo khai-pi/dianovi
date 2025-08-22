@@ -1,0 +1,4 @@
+[
+  { "name": "John Doe", "age": 45, "diagnosis": "Hypertension" },
+  { "name": "Jane Smith", "age": 37, "diagnosis": "Diabetes" }
+]
