@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Request, HTTPException
+import os
+
+import httpx
+import jwt
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-import jwt
-import httpx
-import os
-from fastapi.middleware.cors import CORSMiddleware
 
 # Auth works also as API Gateway
 
@@ -16,7 +17,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,   # Or ["*"] to allow all, but be careful with that in prod
+    allow_origins=origins,  # Or ["*"] to allow all, but be careful with that in prod
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -24,7 +25,9 @@ app.add_middleware(
 
 SECRET = os.getenv("JWT_SECRET", "supersecretkey")
 PATIENT_SERVICE_URL = os.getenv("PATIENT_SERVICE_URL", "http://patient:8000")
-RECOMMENDATION_SERVICE_URL = os.getenv("RECOMMENDATION_SERVICE_URL", "http://recommendation:8000")
+RECOMMENDATION_SERVICE_URL = os.getenv(
+    "RECOMMENDATION_SERVICE_URL", "http://recommendation:8000"
+)
 
 
 class LoginRequest(BaseModel):
@@ -41,28 +44,34 @@ def login(req: LoginRequest):
 
 
 # Forward requests to the patient service
-@app.api_route("/api/patients{full_path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@app.api_route(
+    "/api/patients{full_path:path}", methods=["GET", "POST", "PUT", "DELETE"]
+)
 async def proxy_patients(request: Request, full_path: str):
     return await forward_request(
         request=request,
         target_base_url=PATIENT_SERVICE_URL,
         forward_path=f"/patients{full_path}",
-        protected=True
+        protected=True,
     )
 
 
 # Forward requests to the recommendation service
-@app.api_route("/api/recommend{full_path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@app.api_route(
+    "/api/recommend{full_path:path}", methods=["GET", "POST", "PUT", "DELETE"]
+)
 async def proxy_recommend(request: Request, full_path: str):
     return await forward_request(
         request=request,
         target_base_url=RECOMMENDATION_SERVICE_URL,
         forward_path=f"/recommend{full_path}",
-        protected=True
+        protected=True,
     )
 
 
-async def forward_request(request: Request, target_base_url: str, forward_path: str, protected: bool = False):
+async def forward_request(
+    request: Request, target_base_url: str, forward_path: str, protected: bool = False
+):
     # Check auth if required
     if protected:
         auth = request.headers.get("Authorization")
