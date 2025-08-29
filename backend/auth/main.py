@@ -37,6 +37,8 @@ class LoginRequest(BaseModel):
 
 @app.post("/api/login")
 def login(req: LoginRequest):
+    # Mockup
+    # TODO Implement real authentication, encrypt password in database
     if req.username == "doctor" and req.password == "password":
         token = jwt.encode({"sub": req.username}, SECRET, algorithm="HS256")
         return {"token": token}
