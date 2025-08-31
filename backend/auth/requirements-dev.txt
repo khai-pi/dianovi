@@ -1,0 +1,13 @@
+fastapi[all]
+uvicorn[standard]
+httpx
+PyJWT
+
+# testing
+pytest
+pytest-asyncio
+httpx
+pytest-mock
+pytest-cov
+flake8
+black

@@ -5,7 +5,7 @@ import jwt
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from models import LoginRequest
 
 # Auth works also as API Gateway
 
@@ -28,11 +28,6 @@ PATIENT_SERVICE_URL = os.getenv("PATIENT_SERVICE_URL", "http://patient:8000")
 RECOMMENDATION_SERVICE_URL = os.getenv(
     "RECOMMENDATION_SERVICE_URL", "http://recommendation:8000"
 )
-
-
-class LoginRequest(BaseModel):
-    username: str
-    password: str
 
 
 @app.post("/api/login")
