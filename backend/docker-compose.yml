@@ -7,10 +7,33 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
       POSTGRES_DB: medical
-    volumes:
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d medical"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - backend_network
+    # Uncomment for external access
     # ports:
     #   - "5432:5432"
+
+  db_migrate:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    container_name: healthcare_migrations
+    environment:
+      DATABASE_URL: postgresql://user:pass@db:5432/medical
+    volumes:
+    - ./db:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend_network
+    restart: "no"
 
   # Auth / API Gateway
   auth:
@@ -21,26 +44,51 @@ services:
       - JWT_SECRET=devsecret
       - PATIENT_SERVICE_URL=http://patient:8000
       - RECOMMENDATION_SERVICE_URL=http://recommendation:8000
+      - DATABASE_URL=postgresql://user:pass@db:5432/medical
     depends_on:
+      - db_migrate  # Changed to depend on migrations instead
       - patient
       - recommendation
+    networks:
+      - backend_network
 
   patient:
     build: ./patient
     ports:
       - "8002:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/medical  # Add if patient needs DB
     depends_on:
-      - db
+      - db_migrate  # Changed to depend on migrations instead of db directly
+    networks:
+      - backend_network
 
   recommendation:
     build: ./recommendation
     ports:
       - "8003:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/medical
+    depends_on:
+      - db_migrate
+    networks:
+      - backend_network
 
   his_adapter:
     build: ./his_adapter
     ports:
       - "8004:8000"
     depends_on:
-      - db
+      - db_migrate
       - patient
+    networks:
+      - backend_network
+
+networks:
+  backend_network:
+    driver: bridge
+
+# Optional: Add volumes for data persistence
+# volumes:
+#   db_data:
+#     driver: local
